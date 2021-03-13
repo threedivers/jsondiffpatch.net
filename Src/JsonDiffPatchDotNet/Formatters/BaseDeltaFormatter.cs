@@ -39,7 +39,7 @@ namespace JsonDiffPatchDotNet.Formatters
 				return;
 
 			var type = GetDeltaType(delta, movedFrom);
-			var nodeType = type == DeltaType.Node ? (delta["_t"]?.Value<string>() == "a" ? NodeType.Array : NodeType.Object) : NodeType.Unknown;
+			var nodeType = type == DeltaType.Node ? (delta[JsonDiffPatch.ArrayDiffToken]?.Value<string>() == JsonDiffPatch.ArrayDiffRegular ? NodeType.Array : NodeType.Object) : NodeType.Unknown;
 
 			if (!string.IsNullOrEmpty(key))
 				NodeBegin(context, key, leftKey, type, nodeType, isLast);
@@ -73,7 +73,7 @@ namespace JsonDiffPatchDotNet.Formatters
 			if (delta is JObject jObject)
 			{
 				keys = jObject.Properties().Select(p => p.Name).ToList();
-				arrayKeys = jObject["_t"]?.Value<string>() == "a";
+				arrayKeys = jObject[JsonDiffPatch.ArrayDiffToken]?.Value<string>() == JsonDiffPatch.ArrayDiffRegular;
 			}
 
 			if (left != null && left is JObject leftObject)
@@ -115,7 +115,7 @@ namespace JsonDiffPatchDotNet.Formatters
 			for (var index = 0; index < keys.Count; index++)
 			{
 				var key = keys[index];
-				if (arrayKeys && key == "_t")
+				if (arrayKeys && key == JsonDiffPatch.ArrayDiffToken)
 					continue;
 
 				var leftKey = arrayKeys

@@ -5,6 +5,8 @@
 
 JSON object diffs and reversible patching ([jsondiffpatch](https://github.com/benjamine/jsondiffpatch) compatible)
 
+**ThreeDivers Edit**: Added relative array diff mode. Which allows for finding additions and removals from an array as a relative patch. This means that an items that is added or removed can be patched onto a different object and will only be added if the value isn't already in the target or removed if it is present (not an error if it's not present). This relative array diff does **not** support `Unpatch` at this time.
+
 ## Installing
 
 Install from [jsondiffpatch.net](https://www.nuget.org/packages/JsonDiffPatch.Net/) nuget website, or run the following command:
@@ -56,6 +58,37 @@ Patch a left object with a patch document
   // }
 ```
 
+Patch a left object with a relative array patch document
+
+``` C#
+  var jdp = new JsonDiffPatch(new Options { ArrayDiff = ArrayDiffMode.Relative });
+  var left = JObject.Parse(@"{ ""numbers"" : [1, 2, 3] }");
+  var right = JObject.Parse(@"{ ""numbers"" : [2, 3, 4] }");
+  JToken patch = jdp.Diff(left, right);
+
+  var output = jdp.Patch(left, patch);
+
+  // This is basically the same as a regular array diff.
+  Console.WriteLine(output.ToString());
+
+  // Output:
+  // {
+  //     "numbers": [2, 3, 4]
+  // }
+
+  var differentLeft = JObject.Parse(@"{ ""p"" : [2, 1, 6, 7] }");
+  output = jdp.Patch(differentLeft, patch);
+
+  Console.WriteLine(output.ToString());
+
+  // Output:
+  // {
+  //     "numbers": [2, 6, 7, 4]
+  // }
+```
+
+The second output shows how a number is removed even if it's not at the same index where the original patch was created and that the new value is simply appended to the end.
+
 ### Unpatch
 
 Unpatch a right object with a patch document
@@ -75,6 +108,8 @@ Unpatch a right object with a patch document
   //     "key": false
   // }
 ```
+
+**Note** Array diff patch does not support unpatching!
 
 ## Advanced Usage
 

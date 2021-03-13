@@ -3,10 +3,10 @@
 	public enum ArrayDiffMode
 	{
 		/// <summary>
-		/// Efficient array diff does a deep examination of the contents of an array and 
-		/// produces a patch document that only contains elements in the array that were 
-		/// added or removed. Efficient array diff can only patch and unpatch the original 
-		/// JSON array values used to produce the patch or there will be unintended 
+		/// Efficient array diff does a deep examination of the contents of an array and
+		/// produces a patch document that only contains elements in the array that were
+		/// added or removed. Efficient array diff can only patch and unpatch the original
+		/// JSON array values used to produce the patch or there will be unintended
 		/// consequences.
 		/// </summary>
 		Efficient,
@@ -17,5 +17,12 @@
 		/// JSON token replace. If they are the same, then token is skipped in the patch document.
 		/// </summary>
 		Simple,
+		/// <summary>
+		/// Relative array diff checks for items that should be added or removed from an
+		/// array. When the patch is applied it will only add the values when they're not
+		/// present in the target object. Same with removing values.
+		/// DOES NOT SUPPORT Unpatch!
+		/// </summary>
+		Relative,
 	}
 }

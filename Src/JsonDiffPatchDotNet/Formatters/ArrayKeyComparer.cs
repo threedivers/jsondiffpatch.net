@@ -11,7 +11,7 @@ namespace JsonDiffPatchDotNet.Formatters
 
 		private static int ArrayKeyToSortNumber(string key)
 		{
-			if (key == "_t")
+			if (key == JsonDiffPatch.ArrayDiffToken)
 				return -1;
 
 			if (key.Length > 1 && key[0] == '_')

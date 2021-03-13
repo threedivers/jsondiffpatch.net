@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using DiffMatchPatch;
@@ -10,6 +9,10 @@ namespace JsonDiffPatchDotNet
 {
 	public class JsonDiffPatch
 	{
+		public const string ArrayDiffToken = "_t";
+		public const string ArrayDiffRegular = "a";
+		public const string ArrayDiffRelative = "r";
+
 		private readonly Options _options;
 
 		public JsonDiffPatch()
@@ -29,7 +32,7 @@ namespace JsonDiffPatchDotNet
 
 		/// <summary>
 		/// Diff two JSON objects.
-		/// 
+		///
 		/// The output is a JObject that contains enough information to represent the
 		/// delta between the two objects and to be able perform patch and reverse operations.
 		/// </summary>
@@ -55,6 +58,13 @@ namespace JsonDiffPatchDotNet
 				return ArrayDiff((JArray)left, (JArray)right);
 			}
 
+			if (_options.ArrayDiff == ArrayDiffMode.Relative
+				&& left.Type == JTokenType.Array
+				&& right.Type == JTokenType.Array)
+			{
+				return ArrayRelativeDiff((JArray)left, (JArray)right);
+			}
+
 			if (_options.TextDiff == TextDiffMode.Efficient
 				&& left.Type == JTokenType.String
 				&& right.Type == JTokenType.String
@@ -70,7 +80,7 @@ namespace JsonDiffPatchDotNet
 			if (!JToken.DeepEquals(left, right))
 			{
 				return new JArray(left, right);
-			}				
+			}
 
 			return null;
 		}
@@ -90,15 +100,22 @@ namespace JsonDiffPatchDotNet
 			if (patch.Type == JTokenType.Object)
 			{
 				var patchObj = (JObject)patch;
-				JProperty arrayDiffCanary = patchObj.Property("_t");
+				JProperty arrayDiffCanary = patchObj.Property(ArrayDiffToken);
 
 				if (left != null
 					&& left.Type == JTokenType.Array
 					&& arrayDiffCanary != null
-					&& arrayDiffCanary.Value.Type == JTokenType.String
-					&& arrayDiffCanary.Value.ToObject<string>() == "a")
+					&& arrayDiffCanary.Value.Type == JTokenType.String)
 				{
-					return ArrayPatch((JArray)left, patchObj);
+					var canaryValue = arrayDiffCanary.Value.ToObject<string>();
+					if (canaryValue == ArrayDiffRegular)
+					{
+						return ArrayPatch((JArray)left, patchObj);
+					}
+					else if (canaryValue == ArrayDiffRelative)
+					{
+						return ArrayRelativePatch((JArray)left, patchObj);
+					}
 				}
 
 				return ObjectPatch(left as JObject, patchObj);
@@ -174,15 +191,22 @@ namespace JsonDiffPatchDotNet
 			if (patch.Type == JTokenType.Object)
 			{
 				var patchObj = (JObject)patch;
-				JProperty arrayDiffCanary = patchObj.Property("_t");
+				JProperty arrayDiffCanary = patchObj.Property(ArrayDiffToken);
 
 				if (right != null
 					&& right.Type == JTokenType.Array
 					&& arrayDiffCanary != null
-					&& arrayDiffCanary.Value.Type == JTokenType.String
-					&& arrayDiffCanary.Value.ToObject<string>() == "a")
+					&& arrayDiffCanary.Value.Type == JTokenType.String)
 				{
-					return ArrayUnpatch((JArray)right, patchObj);
+					var canaryValue = arrayDiffCanary.Value.ToObject<string>();
+					if (canaryValue == ArrayDiffRegular)
+					{
+						return ArrayUnpatch((JArray)right, patchObj);
+					}
+					else if (canaryValue == ArrayDiffRelative)
+					{
+						throw new NotImplementedException("Unpatching relative array diff is not implemented");
+					}
 				}
 
 				return ObjectUnpatch(right as JObject, patchObj);
@@ -275,7 +299,7 @@ namespace JsonDiffPatchDotNet
 
 		/// <summary>
 		/// Diff two JSON objects.
-		/// 
+		///
 		/// The output is a JObject that contains enough information to represent the
 		/// delta between the two objects and to be able perform patch and reverse operations.
 		/// </summary>
@@ -355,7 +379,7 @@ namespace JsonDiffPatchDotNet
 				}
 			}
 
-			// Find properties that were added 
+			// Find properties that were added
 			foreach (var rp in right.Properties())
 			{
 				if (left.Property(rp.Name) != null || (_options.DiffBehaviors & DiffBehavior.IgnoreNewProperties) == DiffBehavior.IgnoreNewProperties)
@@ -372,13 +396,13 @@ namespace JsonDiffPatchDotNet
 
 		private JObject ArrayDiff(JArray left, JArray right)
 		{
-			var result = JObject.Parse(@"{ ""_t"": ""a"" }");
+			if (JToken.DeepEquals(left, right))
+				return null;
+
+			var result = JObject.Parse($@"{{ ""{ArrayDiffToken}"": ""{ArrayDiffRegular}"" }}");
 
 			int commonHead = 0;
 			int commonTail = 0;
-
-			if (JToken.DeepEquals(left, right))
-				return null;
 
 			// Find common head
 			while (commonHead < left.Count
@@ -457,6 +481,36 @@ namespace JsonDiffPatchDotNet
 			return result;
 		}
 
+		private JObject ArrayRelativeDiff(JArray left, JArray right)
+		{
+			if (JToken.DeepEquals(left, right))
+				return null;
+
+			var result = new RelativeArrayDiff();
+
+			foreach (var child in right.Children())
+			{
+				if (left.Contains(child, JTokenDeepEqualEqualityComparer.Instance))
+				{
+					continue;
+				}
+
+				result.ToAdd.Add(child);
+			}
+
+			foreach (var child in left.Children())
+			{
+				if (right.Contains(child, JTokenDeepEqualEqualityComparer.Instance))
+				{
+					continue;
+				}
+
+				result.ToRemove.Add(child);
+			}
+
+			return result.Object;
+		}
+
 		private JObject ObjectPatch(JObject obj, JObject patch)
 		{
 			if (obj == null)
@@ -501,7 +555,7 @@ namespace JsonDiffPatchDotNet
 
 			foreach (JProperty op in patch.Properties())
 			{
-				if (op.Name == "_t")
+				if (op.Name == ArrayDiffToken)
 					continue;
 
 				var value = op.Value as JArray;
@@ -560,6 +614,36 @@ namespace JsonDiffPatchDotNet
 			return left;
 		}
 
+		private JArray ArrayRelativePatch(JArray left, JObject patch)
+		{
+			var addList = patch.SelectToken("add");
+			var removeList = patch.SelectToken("remove");
+
+			foreach (var toAdd in addList.Children())
+			{
+				if (left.Contains(toAdd, JTokenDeepEqualEqualityComparer.Instance))
+				{
+					continue;
+				}
+
+				left.Add(toAdd);
+			}
+
+			foreach (var toRemove in removeList.Children())
+			{
+				foreach (var inLeft in left.Children())
+				{
+					if (JToken.DeepEquals(inLeft, toRemove))
+					{
+						inLeft.Remove();
+						break;
+					}
+				}
+			}
+
+			return left;
+		}
+
 		private JObject ObjectUnpatch(JObject obj, JObject patch)
 		{
 			if (obj == null)
@@ -604,7 +688,7 @@ namespace JsonDiffPatchDotNet
 
 			foreach (JProperty op in patch.Properties())
 			{
-				if (op.Name == "_t")
+				if (op.Name == ArrayDiffToken)
 					continue;
 
 				var value = op.Value as JArray;

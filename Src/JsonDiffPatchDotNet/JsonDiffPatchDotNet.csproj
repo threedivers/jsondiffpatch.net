@@ -1,28 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks Condition="'$(LibraryFrameworks)'==''">net45;netstandard1.0;netstandard1.3;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(LibraryFrameworks)'==''">netcoreapp3.1;net45;netstandard1.0;netstandard1.3;netstandard2.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(LibraryFrameworks)'!=''">$(LibraryFrameworks)</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <RootNamespace>JsonDiffPatchDotNet</RootNamespace>
-    <AssemblyName>JsonDiffPatchDotNet</AssemblyName>
-    <AssemblyVersion>2.3.0.0</AssemblyVersion>
-    <FileVersion>2.3.0.0</FileVersion>
+    <AssemblyName>ThreeDiversJsonDiffPatchDotNet</AssemblyName>
+    <AssemblyVersion>2.3.1.0</AssemblyVersion>
+    <FileVersion>2.3.1.0</FileVersion>
     <SignAssembly>true</SignAssembly>
-    <RepositoryUrl>https://github.com/wbish/jsondiffpatch.net</RepositoryUrl>
+    <RepositoryUrl>https://github.com/threedivers/jsondiffpatch.net</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <NeutralLanguage>en-US</NeutralLanguage>
     <Authors>William Bishop</Authors>
     <Title>JsonDiffPatch.Net</Title>
     <Copyright>Copyright © William Bishop 2017</Copyright>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/wbish/jsondiffpatch.net/master/LICENSE</PackageLicenseUrl>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/threedivers/jsondiffpatch.net/master/LICENSE</PackageLicenseUrl>
     <Description>JSON object diffs and reversible patching</Description>
     <PackageId>JsonDiffPatch.Net</PackageId>
     <PackageTags>json diff patch unpatch</PackageTags>
-    <PackageProjectUrl>https://github.com/wbish/jsondiffpatch.net</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/threedivers/jsondiffpatch.net</PackageProjectUrl>
     <AssemblyOriginatorKeyFile>JsonDiffPatchDotNet.snk</AssemblyOriginatorKeyFile>
     <MinClientVersion>2.12</MinClientVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>2.3.0.0</Version>
+    <Version>2.4.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
