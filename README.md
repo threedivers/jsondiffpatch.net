@@ -1,8 +1,4 @@
 # jsondiffpatch.net
-<!--- badges -->
-[![Build status](https://ci.appveyor.com/api/projects/status/aavhn0lwas0j29gy?svg=true)](https://ci.appveyor.com/project/wbish/jsondiffpatch-net)
-[![NuGet](https://img.shields.io/nuget/v/JsonDiffPatch.Net.svg)](https://www.nuget.org/packages/JsonDiffPatch.Net/)
-
 JSON object diffs and reversible patching ([jsondiffpatch](https://github.com/benjamine/jsondiffpatch) compatible)
 
 **ThreeDivers Edit**: Added relative array diff mode. Which allows for finding additions and removals from an array as a relative patch. This means that an items that is added or removed can be patched onto a different object and will only be added if the value isn't already in the target or removed if it is present (not an error if it's not present). This relative array diff does **not** support `Unpatch` at this time.
